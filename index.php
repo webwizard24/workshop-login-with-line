@@ -1,14 +1,23 @@
 <?php
+session_start();
+
+// ตรวจสอบว่ามีข้อความแจ้งเตือนหรือไม่
+$message = $_SESSION['message'] ?? null;
+if ($message) {
+    unset($_SESSION['message']); // ลบข้อความหลังจากแสดงผล
+}
+
 // โหลดค่าการตั้งค่าจาก config.php
 $config = require 'config.php';
+
+// สร้าง State เพื่อป้องกัน CSRF
+$state = bin2hex(random_bytes(16)); // สุ่ม State
+$_SESSION['state'] = $state; // บันทึก State ในเซสชัน
 
 // สร้าง URL สำหรับ Login ด้วย LINE
 $client_id = $config['channel_id'];
 $redirect_uri = urlencode($config['redirect_uri']);
-$state = bin2hex(random_bytes(16)); // สุ่ม State เพื่อป้องกัน CSRF
 $scope = 'profile openid email'; // ขอบเขตการเข้าถึงข้อมูล
-
-// สร้างลิงก์สำหรับ Login
 $login_url = "https://access.line.me/oauth2/v2.1/authorize?response_type=code"
     . "&client_id=$client_id"
     . "&redirect_uri=$redirect_uri"
@@ -25,6 +34,7 @@ $login_url = "https://access.line.me/oauth2/v2.1/authorize?response_type=code"
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Custom CSS -->
     <style>
         .line-login-btn {
             background-color: #00c300;
@@ -42,16 +52,33 @@ $login_url = "https://access.line.me/oauth2/v2.1/authorize?response_type=code"
         .line-login-btn:hover {
             background-color: #009900;
         }
+
+        .card-header {
+            background-color: #00c300;
+            color: white;
+        }
+
+        .card-footer {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 
 <body>
     <div class="container mt-5">
+        <!-- แจ้งเตือนหากมีข้อความ -->
+        <?php if ($message): ?>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <?php echo $message; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header text-center bg-success text-white">
-                        <h3>Login with LINE</h3>
+                <div class="card shadow-lg">
+                    <div class="card-header text-center">
+                        <h3>Welcome to LINE Login</h3>
                     </div>
                     <div class="card-body text-center">
                         <p class="mb-4">Click the button below to log in with your LINE account.</p>
@@ -60,7 +87,7 @@ $login_url = "https://access.line.me/oauth2/v2.1/authorize?response_type=code"
                         </a>
                     </div>
                     <div class="card-footer text-center">
-                        <p class="text-muted">Powered by LINE Login API</p>
+                        <p class="text-muted mb-0">Powered by LINE Login API</p>
                     </div>
                 </div>
             </div>
